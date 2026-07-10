@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { Sparkle } from "@/components/site/Sparkle";
 import { createClient } from "@/lib/supabase/client";
+import { Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -20,6 +21,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -118,10 +120,20 @@ function AuthPage() {
             />
             <Field
               label="Password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               placeholder="********"
               required
+              rightElement={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="flex items-center justify-center p-1 text-black hover:scale-105 transition-transform outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
             />
             <button
               type="submit"
@@ -150,6 +162,7 @@ function AuthPage() {
               onClick={() => {
                 setMode(mode === "signin" ? "signup" : "signin");
                 setError(null);
+                setShowPassword(false);
               }}
               className="font-bold underline"
             >
@@ -168,23 +181,32 @@ function Field({
   name,
   placeholder,
   required,
+  rightElement,
 }: {
   label: string;
   type: string;
   name: string;
   placeholder: string;
   required?: boolean;
+  rightElement?: React.ReactNode;
 }) {
   return (
     <label className="block">
       <span className="eyebrow mb-1 block font-bold">{label}</span>
-      <input
-        type={type}
-        name={name}
-        placeholder={placeholder}
-        required={required}
-        className="w-full border-0 border-b-2 border-black bg-transparent px-1 py-2 font-mono text-sm outline-none focus:bg-lime/40"
-      />
+      <div className="relative flex items-center border-0 border-b-2 border-black focus-within:bg-lime/40 group">
+        <input
+          type={type}
+          name={name}
+          placeholder={placeholder}
+          required={required}
+          className="w-full bg-transparent px-1 py-2 font-mono text-sm outline-none"
+        />
+        {rightElement && (
+          <div className="absolute right-2 flex items-center justify-center">
+            {rightElement}
+          </div>
+        )}
+      </div>
     </label>
   );
 }
