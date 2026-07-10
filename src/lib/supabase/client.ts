@@ -13,6 +13,44 @@
  */
 import { createBrowserClient } from "@supabase/ssr";
 
+// Validate environment variables on app startup in development mode
+if (import.meta.env.DEV) {
+  const url =
+    import.meta.env.VITE_SUPABASE_URL ||
+    import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
+    (typeof process !== "undefined" ? process.env.VITE_SUPABASE_URL : undefined) ||
+    (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_SUPABASE_URL : undefined);
+
+  const anonKey =
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    (typeof process !== "undefined" ? process.env.VITE_SUPABASE_ANON_KEY : undefined) ||
+    (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : undefined);
+
+  if (!url || !anonKey) {
+    const missing = [];
+    if (!url) missing.push("VITE_SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL)");
+    if (!anonKey) missing.push("VITE_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY)");
+    const errorMsg = `[CampusConnect] Missing required environment variable(s): ${missing.join(", ")}. Please check your .env.local file.`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  let isValid = false;
+  try {
+    const parsedUrl = new URL(url);
+    isValid = parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch (err) {
+    // URL parsing failed
+  }
+
+  if (!isValid) {
+    const errorMsg = `[CampusConnect] Invalid Supabase URL: "${url}". Please check your VITE_SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) in .env.local and make sure it is a valid HTTP or HTTPS URL.`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+}
+
 export function createClient() {
   const supabaseUrl =
     import.meta.env.VITE_SUPABASE_URL ||
