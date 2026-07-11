@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
+import { EventCard } from "@/components/EventCard";
 
 export const Route = createFileRoute("/events")({
   head: () => ({
@@ -105,61 +106,16 @@ function EventsPage() {
           {isLoading ? (
             <div className="col-span-full font-mono text-center py-10">Loading events...</div>
           ) : (
-            filteredEvents.map((e, index) => {
-              const c = Array.isArray(e.clubs) ? e.clubs[0] : e.clubs;
-              const rsvps = Array.isArray(e.event_rsvps) ? e.event_rsvps : [];
-              const hasRsvpd = user ? rsvps.some((r) => r.user_id === user.id) : false;
-
-              return (
-                <article key={e.id} className="neu-border neu-press flex flex-col bg-white p-5">
-                  <div className="mb-4 flex items-start justify-between">
-                    {/* Updated: Standardized card badge layout using your global formatting utility */}
-                    <div
-                      className={`neu-border ${colors[index % colors.length]} px-4 py-3 text-center font-mono text-xs font-bold`}
-                    >
-                      {e.event_date
-                        ? formatDate(e.event_date).split(" at ")[0].toUpperCase()
-                        : "TBA"}
-                    </div>
-                    <span className="neu-border bg-cream px-2 py-1 font-mono text-[10px] font-bold uppercase">
-                      Event
-                    </span>
-                  </div>
-                  <h2 className="text-xl font-bold">{e.title}</h2>
-                  <p className="mt-1 font-mono text-xs">{c?.name}</p>
-                  <div className="my-4 border-t-2 border-black" />
-
-                  {/* Updated Data List: Displays full standardized clean text layout */}
-                  <dl className="space-y-1 font-mono text-xs">
-                    <div className="flex flex-col gap-0.5 border-b border-gray-100 pb-1.5">
-                      <dt className="font-bold uppercase text-gray-500">Date & Time</dt>
-                      <dd className="font-medium text-black">
-                        {e.event_date ? formatDate(e.event_date) : "TBA"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between pt-1.5">
-                      <dt className="font-bold uppercase">Venue</dt>
-                      <dd>{e.location || "TBA"}</dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="font-bold uppercase text-lime-600">Attendees</dt>
-                      <dd className="font-bold">{rsvps.length} RSVP'd</dd>
-                    </div>
-                  </dl>
-
-                  <button
-                    onClick={() => {
-                      if (!user) return alert("Please log in to RSVP");
-                      toggleRsvp.mutate({ eventId: e.id, hasRsvpd });
-                    }}
-                    disabled={toggleRsvp.isPending}
-                    className={`neu-border neu-press mt-5 px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider ${hasRsvpd ? "bg-lime text-black" : "bg-black text-cream"}`}
-                  >
-                    {hasRsvpd ? "RSVP'd ✓" : "RSVP →"}
-                  </button>
-                </article>
-              );
-            })
+            filteredEvents.map((e, index) => (
+              <EventCard
+                key={e.id}
+                event={e}
+                index={index}
+                user={user}
+                onRsvpToggle={(eventId, hasRsvpd) => toggleRsvp.mutate({ eventId, hasRsvpd })}
+                isRsvpPending={toggleRsvp.isPending}
+              />
+            ))
           )}
         </div>
       </section>
