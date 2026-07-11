@@ -35,6 +35,7 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 ### Core Tables
 
 #### profiles
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key; references Supabase Auth user |
@@ -47,6 +48,7 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 | updated_at | Timestamp | Last profile update time |
 
 #### clubs
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -60,6 +62,7 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 | updated_at | Timestamp | Last club update time |
 
 #### club_members
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -70,6 +73,7 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 | joined_at | Timestamp | Membership join time |
 
 #### events
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -84,6 +88,7 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 | updated_at | Timestamp | Last event update time |
 
 #### event_rsvps
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -93,6 +98,7 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 | rsvp_at | Timestamp | RSVP timestamp |
 
 #### posts
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -103,6 +109,7 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 | updated_at | Timestamp | Last post update time |
 
 #### comments
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -113,6 +120,7 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 | updated_at | Timestamp | Last comment update time |
 
 #### certificates
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -123,7 +131,8 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 
 ### Relationships
 
-- One profile can create many clubs, events, posts, comments, and certificates.
+- One profile can create many clubs, events, posts, and comments.
+- One profile can receive many certificates.
 - One club can have many members, events, and posts.
 - One event can have many RSVPs and certificates.
 - One post can have many comments.
@@ -142,13 +151,11 @@ This project uses **Supabase (PostgreSQL)** as its backend database, with Supaba
 ### Entity Relationship Diagram (ERD)
 
 ```text
-profiles ──< clubs >──< club_members >── clubs
-  │             │              │
-  │             │              └── events ──< event_rsvps
-  │             │
-  │             └── posts ──< comments
-  │
-  └── certificates
+profiles ──< clubs
+profiles ──< club_members >── clubs
+events ──< event_rsvps >── profiles
+clubs ──< posts >── comments >── profiles
+events ──< certificates >── profiles
 ```
 
 ## 🚀 Getting Started
