@@ -18,6 +18,7 @@ interface Event {
   clubs: { name: string } | { name: string }[] | null;
   event_rsvps: { id: string; user_id: string }[] | null;
   saved_events?: { id: string; user_id: string }[] | null;
+  attendee_count?: number;
 }
 
 interface EventCardProps {
@@ -159,7 +160,7 @@ export function EventCard({
         </div>
         <div>
           <dt className="font-mono text-xs font-bold uppercase">Attendees</dt>
-          <dd className="mt-1 text-sm">{rsvps.length} RSVP&apos;d</dd>
+          <dd className="mt-1 text-sm">{event.attendee_count ?? 0} RSVP&apos;d</dd>
         </div>
       </dl>
 
