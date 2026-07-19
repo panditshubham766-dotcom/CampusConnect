@@ -23,6 +23,12 @@ function OfflineBanner() {
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
 
+    // Re-sync in case connectivity changed between the initial render
+    // (when navigator.onLine was first read) and this effect attaching
+    // the listeners above — otherwise a transition in that gap would be
+    // missed until some later online/offline event happens to correct it.
+    setIsOffline(!navigator.onLine);
+
     return () => {
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
