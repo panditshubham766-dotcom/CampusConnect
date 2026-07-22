@@ -41,8 +41,6 @@ import NotificationsRoute from "./routes/notifications";
 import ProfileRoute from "./routes/profile.$handle";
 import { NotFoundPage } from "./components/NotFoundPage";
 
-const HEALTH_CHECK_TIMEOUT = 8000; // 8 seconds
-
 interface HealthStatus {
   ok: boolean;
   error?: string;
@@ -122,8 +120,6 @@ const router = createBrowserRouter(
     </Route>,
   ),
 );
-
-const DB_HEALTH_CHECK_TIMEOUT_MS = 8000;
 
 export default function App() {
   const [dbStatus, setDbStatus] = useState<HealthStatus | null>(null);
