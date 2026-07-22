@@ -4,8 +4,8 @@ BEGIN;
 -- Enable pgTAP extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS pgtap;
 
--- Plan the tests (we have 11 tests)
-SELECT plan(11);
+-- Plan the tests (we have 13 tests)
+SELECT plan(13);
 
 -- Grant privileges to authenticated role so that table-level permissions do not interfere with RLS testing
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated, anon;
@@ -26,9 +26,15 @@ UPDATE public.profiles SET role = 'student' WHERE id IN ('90000000-0000-0000-000
 UPDATE public.profiles SET role = 'club_admin' WHERE id = '90000000-0000-0000-0000-000000000003';
 UPDATE public.profiles SET role = 'system_admin' WHERE id = '90000000-0000-0000-0000-000000000010';
 
--- Create a club
+-- Create a primary club
 INSERT INTO public.clubs (id, name, slug, description, created_by)
 VALUES ('90000000-0000-0000-0000-000000000004', 'Test Club RLS', 'test-club-rls', 'A club for testing RLS', '90000000-0000-0000-0000-000000000003');
+
+-- Insert dynamic roles for the primary club
+INSERT INTO public.club_roles (id, club_id, title, permissions_level)
+VALUES
+  ('90000000-0000-0000-0000-000000000100', '90000000-0000-0000-0000-000000000004', 'Admin', 100),
+  ('90000000-0000-0000-0000-000000000101', '90000000-0000-0000-0000-000000000004', 'Member', 10);
 
 -- Create an event for the club
 INSERT INTO public.events (id, club_id, title, description, location, created_by)
@@ -118,8 +124,8 @@ SELECT throws_ok(
 RESET role;
 
 -- Insert a pending membership for User A
-INSERT INTO public.club_members (id, club_id, user_id, role, status)
-VALUES ('90000000-0000-0000-0000-000000000008', '90000000-0000-0000-0000-000000000004', '90000000-0000-0000-0000-000000000001', 'member', 'pending');
+INSERT INTO public.club_members (id, club_id, user_id, role_id, status)
+VALUES ('90000000-0000-0000-0000-000000000008', '90000000-0000-0000-0000-000000000004', '90000000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000101', 'pending');
 
 -- Case 2: User A is a pending member of the club
 SET local role authenticated;
@@ -146,6 +152,9 @@ SELECT lives_ok(
   $$INSERT INTO public.posts (id, club_id, author_id, content) VALUES ('90000000-0000-0000-0000-000000000009', '90000000-0000-0000-0000-000000000004', '90000000-0000-0000-0000-000000000001', 'This post should succeed')$$,
   'Approved member can create posts'
 );
+
+-- Reset back to postgres superuser role
+RESET role;
 
 -- ==========================================
 -- Test RLS: Non-admin users cannot write to event_categories
@@ -179,14 +188,77 @@ SELECT lives_ok(
   'System admin can insert event categories'
 );
 
--- Can update and delete
+-- Can update
 SELECT lives_ok(
   $$UPDATE public.event_categories SET description = 'Updated by system admin' WHERE id = '90000000-0000-0000-0000-000000000021'$$,
   'System admin can update event categories'
+);
+
+-- Reset back to postgres superuser role
+RESET role;
+
+-- ==========================================
+-- Test RLS: Co-host club admin can update events (#591)
+-- ==========================================
+
+-- Create a co-hosting club admin user
+INSERT INTO auth.users (id, email, aud, role, raw_user_meta_data)
+VALUES ('90000000-0000-0000-0000-000000000020', 'cohost_admin@test.com', 'authenticated', 'authenticated', '{"full_name": "CoHost Admin"}')
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE public.profiles SET role = 'club_admin' WHERE id = '90000000-0000-0000-0000-000000000020';
+
+-- Create a co-hosting club (different from the primary club)
+INSERT INTO public.clubs (id, name, slug, description, created_by)
+VALUES ('90000000-0000-0000-0000-000000000022', 'Co-Host Club', 'co-host-club', 'Secondary hosting club', '90000000-0000-0000-0000-000000000020');
+
+-- Insert dynamic roles for the co-host club
+INSERT INTO public.club_roles (id, club_id, title, permissions_level)
+VALUES
+  ('90000000-0000-0000-0000-000000000102', '90000000-0000-0000-0000-000000000022', 'Admin', 100),
+  ('90000000-0000-0000-0000-000000000103', '90000000-0000-0000-0000-000000000022', 'Member', 10);
+
+-- Make the co-host user an approved admin of the co-host club
+INSERT INTO public.club_members (id, club_id, user_id, role_id, status)
+VALUES ('90000000-0000-0000-0000-000000000023', '90000000-0000-0000-0000-000000000022', '90000000-0000-0000-0000-000000000020', '90000000-0000-0000-0000-000000000102', 'approved');
+
+-- Register the co-host club for the test event
+INSERT INTO public.event_co_hosts (event_id, club_id)
+VALUES ('90000000-0000-0000-0000-000000000005', '90000000-0000-0000-0000-000000000022');
+
+-- Test 12: Co-host club admin CAN update event details
+SET local role authenticated;
+SELECT set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000020', true);
+
+UPDATE public.events
+SET description = 'Updated by co-host admin'
+WHERE id = '90000000-0000-0000-0000-000000000005';
+
+RESET role;
+
+SELECT is(
+  (SELECT description FROM public.events WHERE id = '90000000-0000-0000-0000-000000000005'),
+  'Updated by co-host admin',
+  'Co-host club admin successfully updated event details'
+);
+
+-- Test 13: Regular student (User B, not a co-host admin) CANNOT update the event
+SET local role authenticated;
+SELECT set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000002', true);
+
+UPDATE public.events
+SET description = 'Updated by student'
+WHERE id = '90000000-0000-0000-0000-000000000005';
+
+RESET role;
+
+SELECT is(
+  (SELECT description FROM public.events WHERE id = '90000000-0000-0000-0000-000000000005'),
+  'Updated by co-host admin',
+  'Student was blocked from updating event details'
 );
 
 -- Reset role and finish
 RESET role;
 SELECT * FROM finish();
 ROLLBACK;
-

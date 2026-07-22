@@ -60,7 +60,6 @@ CREATE TABLE clubs (
   visibility club_visibility DEFAULT 'public'::club_visibility,
   social_links JSONB DEFAULT '{}'::jsonb,
   created_by UUID REFERENCES profiles(id),
-  visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'private')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT check_clubs_slug_format CHECK (slug ~ '^[a-z0-9-]+$'),
@@ -93,6 +92,8 @@ CREATE TABLE events (
   description TEXT,
   banner_url TEXT,
   event_date TIMESTAMPTZ,
+  start_date TIMESTAMPTZ,
+  end_date TIMESTAMPTZ,
   location TEXT,
   latitude DOUBLE PRECISION,
   longitude DOUBLE PRECISION,
@@ -125,26 +126,13 @@ CHECK (
     longitude IS NULL OR
     (longitude >= -180 AND longitude <= 180)
 );
-CREATE INDEX idx_club_members_club_id
-ON club_members(club_id);
 
-CREATE INDEX idx_club_members_user_id
-ON club_members(user_id);
-
-CREATE INDEX idx_event_rsvps_event_id
-ON event_rsvps(event_id);
-
-CREATE INDEX idx_event_rsvps_user_id
-ON event_rsvps(user_id);
-
-CREATE INDEX idx_notifications_user_id
-ON notifications(user_id);
-
-CREATE INDEX idx_posts_club_id
-ON posts(club_id);
-
-CREATE INDEX idx_comments_post_id
-ON comments(post_id);
+CREATE TABLE event_co_hosts (
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  club_id UUID NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (event_id, club_id)
+);
 
 CREATE TABLE event_rsvps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -211,6 +199,15 @@ CREATE TABLE audit_logs (
   details JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Indexes
+CREATE INDEX idx_club_members_club_id ON club_members(club_id);
+CREATE INDEX idx_club_members_user_id ON club_members(user_id);
+CREATE INDEX idx_event_rsvps_event_id ON event_rsvps(event_id);
+CREATE INDEX idx_event_rsvps_user_id ON event_rsvps(user_id);
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_posts_club_id ON posts(club_id);
+CREATE INDEX idx_comments_post_id ON comments(post_id);
 
 -- Helper function: check if user is system admin
 CREATE OR REPLACE FUNCTION public.is_system_admin()
@@ -295,14 +292,13 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_upcoming_events_feed(UUID) TO authenticated;
 
-=======
->>>>>>> c1cfe2e49db97643322ead8fecc27703942c5c15
 -- 3. Row Level Security (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE clubs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE club_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE event_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE event_co_hosts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE event_rsvps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
@@ -310,6 +306,17 @@ ALTER TABLE certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- event_co_hosts policies
+CREATE POLICY "Co-hosts are viewable by everyone." ON event_co_hosts FOR SELECT USING (true);
+CREATE POLICY "Primary club admins can add co-hosts." ON event_co_hosts FOR INSERT WITH CHECK (
+  public.is_club_admin((SELECT club_id FROM public.events WHERE id = event_co_hosts.event_id), auth.uid()) OR
+  EXISTS (SELECT 1 FROM public.clubs WHERE id = (SELECT club_id FROM public.events WHERE id = event_co_hosts.event_id) AND created_by = auth.uid())
+);
+CREATE POLICY "Primary club admins can delete co-hosts." ON event_co_hosts FOR DELETE USING (
+  public.is_club_admin((SELECT club_id FROM public.events WHERE id = event_co_hosts.event_id), auth.uid()) OR
+  EXISTS (SELECT 1 FROM public.clubs WHERE id = (SELECT club_id FROM public.events WHERE id = event_co_hosts.event_id) AND created_by = auth.uid())
+);
 
 CREATE POLICY "System admins can view audit logs" ON audit_logs FOR SELECT TO authenticated USING (public.is_system_admin());
 
@@ -363,7 +370,12 @@ CREATE POLICY "Club admins can insert events." ON events FOR INSERT WITH CHECK (
 );
 CREATE POLICY "Club admins can update events." ON events FOR UPDATE USING (
   public.is_club_admin(club_id, auth.uid()) OR
-  EXISTS (SELECT 1 FROM clubs WHERE id = events.club_id AND created_by = auth.uid())
+  EXISTS (SELECT 1 FROM clubs WHERE id = events.club_id AND created_by = auth.uid()) OR
+  EXISTS (
+    SELECT 1 FROM public.event_co_hosts ech
+    WHERE ech.event_id = events.id
+      AND public.is_club_admin(ech.club_id, auth.uid())
+  )
 );
 
 -- event_rsvps: users can create/read their own RSVPs, club admins can read all for their events
@@ -406,7 +418,7 @@ CREATE POLICY "Authors or club admins can delete comments." ON comments FOR DELE
 
 -- certificates: users can read only their own
 CREATE POLICY "Users can read own certificates." ON certificates FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Service role can insert certificates." ON certificates FOR INSERT WITH CHECK (true); -- Usually handled by edge functions / server
+CREATE POLICY "Service role can insert certificates." ON certificates FOR INSERT WITH CHECK (true);
 
 -- saved_events: users can manage their own saved events/bookmarks
 CREATE POLICY "Users can read own saved events." ON saved_events FOR SELECT USING (auth.uid() = user_id);
@@ -417,6 +429,7 @@ CREATE POLICY "Users can unsave events." ON saved_events FOR DELETE USING (auth.
 CREATE POLICY "Users can view their own notifications" ON notifications FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can update their own notifications" ON notifications FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own notifications" ON notifications FOR DELETE USING (auth.uid() = user_id);
+
 -- 4. Triggers
 -- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
