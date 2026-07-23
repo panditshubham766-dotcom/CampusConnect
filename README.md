@@ -257,16 +257,21 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 ## 👥 Contributors
 
+feat/wasm-image-compression
+<!-- readme: contributors -start -->
+<!-- readme: contributors -end -->
+
 <!-- START_CONTRIBUTORS_GALLERY -->
+
 ### 🏆 Hall of Fame (Top 5)
 
-| Rank | Contributor | Contributions |
-| :---: | :---: | :---: |
-| 🥇 | <a href="https://github.com/krushit1307"><img src="https://avatars.githubusercontent.com/u/196679210?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>krushit1307</b></sub></a> | 132 |
-| 🥈 | <a href="https://github.com/Aryanbuha890"><img src="https://avatars.githubusercontent.com/u/273169945?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>Aryanbuha890</b></sub></a> | 37 |
-| 🥉 | <a href="https://github.com/Jivan-Patel"><img src="https://avatars.githubusercontent.com/u/225341922?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>Jivan-Patel</b></sub></a> | 32 |
-| 4️⃣ | <a href="https://github.com/Ayush-0918"><img src="https://avatars.githubusercontent.com/u/184804819?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>Ayush-0918</b></sub></a> | 30 |
-| 5️⃣ | <a href="https://github.com/panditshubham766-dotcom"><img src="https://avatars.githubusercontent.com/u/233032889?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>panditshubham766-dotcom</b></sub></a> | 16 |
+| Rank |                                                                                                         Contributor                                                                                                          | Contributions |
+| :--: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------: |
+|  🥇  |             <a href="https://github.com/krushit1307"><img src="https://avatars.githubusercontent.com/u/196679210?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>krushit1307</b></sub></a>             |      132      |
+|  🥈  |            <a href="https://github.com/Aryanbuha890"><img src="https://avatars.githubusercontent.com/u/273169945?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>Aryanbuha890</b></sub></a>            |      37       |
+|  🥉  |             <a href="https://github.com/Jivan-Patel"><img src="https://avatars.githubusercontent.com/u/225341922?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>Jivan-Patel</b></sub></a>             |      32       |
+|  4️⃣  |              <a href="https://github.com/Ayush-0918"><img src="https://avatars.githubusercontent.com/u/184804819?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>Ayush-0918</b></sub></a>              |      30       |
+|  5️⃣  | <a href="https://github.com/panditshubham766-dotcom"><img src="https://avatars.githubusercontent.com/u/233032889?v=4" width="50" height="50" style="border-radius:50%;"/><br /><sub><b>panditshubham766-dotcom</b></sub></a> |      16       |
 
 ### 👥 All Contributors
 
@@ -302,3 +307,5 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 <a href="https://github.com/sumittiwari1302"><img src="https://avatars.githubusercontent.com/u/251316528?v=4" width="40" height="40" style="border-radius:50%; margin:3px;" title="sumittiwari1302 (4 contributions)"/></a>
 
 <!-- END_CONTRIBUTORS_GALLERY -->
+
+main
