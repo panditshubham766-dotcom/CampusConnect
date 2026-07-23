@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import * as Popover from '@radix-ui/react-popover';
-import { Bell, CheckCheck, Loader2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import React, { useEffect, useState } from "react";
+import * as Popover from "@radix-ui/react-popover";
+import { Bell, CheckCheck, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 type Notification = {
   id: string;
@@ -21,14 +21,16 @@ export function NotificationBell() {
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
         .limit(5);
 
       if (error) throw error;
@@ -36,7 +38,7 @@ export function NotificationBell() {
       setNotifications(data || []);
       setUnreadCount((data || []).filter((n) => !n.read).length);
     } catch (err) {
-      console.error('Error fetching notifications:', err);
+      console.error("Error fetching notifications:", err);
     } finally {
       setIsLoading(false);
     }
@@ -48,21 +50,23 @@ export function NotificationBell() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { error } = await supabase
-        .from('notifications')
+        .from("notifications")
         .update({ read: true })
-        .eq('user_id', user.id)
-        .eq('read', false);
+        .eq("user_id", user.id)
+        .eq("read", false);
 
       if (error) throw error;
 
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (err) {
-      console.error('Error marking notifications as read:', err);
+      console.error("Error marking notifications as read:", err);
     }
   };
 
@@ -115,7 +119,10 @@ export function NotificationBell() {
               </p>
             ) : (
               notifications.map((n) => (
-                <div key={n.id} className={`py-2.5 ${!n.read ? 'font-semibold bg-sky/10 px-2 rounded' : ''}`}>
+                <div
+                  key={n.id}
+                  className={`py-2.5 ${!n.read ? "font-semibold bg-sky/10 px-2 rounded" : ""}`}
+                >
                   <p className="text-sm font-bold text-black">{n.title}</p>
                   <p className="text-xs font-mono text-gray-600 line-clamp-2">{n.message}</p>
                 </div>
