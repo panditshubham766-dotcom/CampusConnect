@@ -165,6 +165,7 @@ export default function DashboardCalendar() {
                   <span>{cat.name}</span>
                 </label>
               ))}
+
               {categories.length === 0 && (
                 <p className="font-mono text-xs text-gray-500">No categories found.</p>
               )}
